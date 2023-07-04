@@ -4,7 +4,10 @@ import numpy as np
 import scipy
 from scipy.optimize import minimize
 import forcemap
-import force_estimation_v2 as fe
+# import force_estimation_v2 as fe
+import torch
+from eipl_utils import tensor2numpy
+import force_estimation_v4 as fe
 
 import rospy
 from sensor_msgs.msg import Image
@@ -20,14 +23,27 @@ import copy
 image_topic = '/camera/color/image_raw'
 
 
-model = fe.model_rgb_to_fmap_res50()
-model.load_weights('../runs/ae_cp.basket-filling2.model_resnet.20221202165608/cp.ckpt')
+# model = fe.model_rgb_to_fmap_res50()
+# model.load_weights('../runs/ae_cp.basket-filling2.model_resnet.20221202165608/cp.ckpt')
+
+model = fe.ForceEstimationResNetSeriaBasket()
+ckpt = torch.load('../runs/20230627_1730_52/CAE.pth')
+model.load_state_dict(ckpt['model_state_dict'])
+model.eval()
+
+
 fmap = forcemap.GridForceMap('seria_basket')
 viewer = force_distribution_viewer.ForceDistributionViewer.get_instance()
 params = copy.copy(force_estimationConfig.defaults)
 
 
 bridge = CvBridge()
+
+
+def normalization(data, indataRange, outdataRange=[0.1, 0.9]):
+    data = ( data - indataRange[0] ) / ( indataRange[1] - indataRange[0] )
+    data = data * ( outdataRange[1] - outdataRange[0] ) + outdataRange[0]
+    return data
 
 
 def crop_center_d415(img):
@@ -110,15 +126,28 @@ def process_image(msg):
         cv2.waitKey(1)
         return
 
-    fimg = img.astype(np.float64) / 255.
+    # Tensorflow
+    # fimg = img.astype(np.float64) / 255.
+    # xs = np.expand_dims(fimg, 0)
+    # predicted_force_map = model.predict(xs)
 
-    xs = np.expand_dims(fimg, 0)
-    predicted_force_map = model.predict(xs)
+    # PyTorch
+    fimg = img.transpose(2, 0, 1)
+    fimg = normalization(fimg.astype(np.float32), (0.0, 255.0))
+    fimg = torch.from_numpy(fimg).float()
+    batch = torch.unsqueeze(fimg, 0)
+    batch.to('cuda')
+    yi = model(batch)[0]
+    batch.to('cpu')
+    fv = tensor2numpy(yi).transpose(1, 2, 0)
+    predicted_force_map = fv[:,:,:20]
 
-    fv = np.zeros((40, 40, 40))
-    fv[:, :, :20] = predicted_force_map[0]
+    # fv = np.zeros((40, 40, 40))
+    # fv[:, :, :20] = predicted_force_map[0]
+
     fmap.set_values(fv)
-    viewer.publish_bin_state(None, 
+
+    viewer.publish_bin_state(None,
                              fmap, 
                              draw_fmap=True, 
                              draw_force_gradient=False, 
