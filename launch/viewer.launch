@@ -1,0 +1,11 @@
+<launch>
+  <arg name="use_rviz" default="true"/>
+
+  <!-- Launch rviz -->
+  <node if="$(arg use_rviz)"
+	name="rviz" pkg="rviz" type="rviz"
+	args="-d $(find force_estimation)/config/fmap_visualizer.rviz"/>
+  
+  <node pkg="tf" type="static_transform_publisher" name="camera_pose_broadcaster" args="0.01 -0.03 1.338 1.57 0 3.14 map camera_depth_optical_frame 100" />
+
+</launch>

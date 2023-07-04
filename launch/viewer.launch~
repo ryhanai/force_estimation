@@ -1,0 +1,10 @@
+<launch>
+  <arg name="use_rviz" default="true"/>
+
+  <!-- Launch rviz -->
+  <node if="$(arg use_rviz)"
+	name="rviz" pkg="rviz" type="rviz"
+	args="-d $(find fmap_visualizer)/config/fmap_visualizer.rviz"/>
+  
+  
+</launch>

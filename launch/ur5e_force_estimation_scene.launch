@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="use_moveit" default="true"/>
+  <arg name="use_spacenav" default="true"/>
+  <arg name="use_camera" default="false"/>
+
+  <!-- Launch MoveIt! -->
+  <include if="$(arg use_moveit)"
+	   file="$(find ur5e_moveit_config)/launch/ur5e_moveit_planning_execution.launch"/>
+
+  <!-- Launch jog_controller & spacenav driver -->
+  <include if="$(arg use_spacenav)"
+	   file="$(find jog_launch)/launch/ur5e.launch">
+    <arg name="use_spacenav" value="true"/>
+  </include>
+
+  <!-- Launch realsense % ImageView -->
+  <include if="$(arg use_camera)"
+	   file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="color_width" value="320"/>
+    <arg name="color_height" value="240"/>
+    <arg name="color_fps" value="30"/>
+    <arg name="publish_tf" value="false"/>
+  </include>
+
+</launch>
