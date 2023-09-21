@@ -28,6 +28,7 @@ image_topic = '/camera/color/image_raw'
 
 model = fe.ForceEstimationResNetSeriaBasket()
 ckpt = torch.load('../runs/20230627_1730_52/CAE.pth')
+# ckpt = torch.load('../runs/20230725_1252_11/CAE.pth')
 model.load_state_dict(ckpt['model_state_dict'])
 model.eval()
 
@@ -109,8 +110,12 @@ def pick_direction_plan(y_pred, object_center, object_radius, scale=[0.005, 0.01
     # viewer.rviz_client.draw_arrow(object_center, object_center + pick_omega * 0.1, [1, 1, 0, 1], scale)
     return pick_direction, pick_omega
 
+frame_no = 0
+import pandas as pd
 
-def process_image(msg):
+def process_image(msg, save_result=False):
+    global frame_no
+
     try:
         cv_image = bridge.imgmsg_to_cv2(msg, "rgb8")
     except CvBridgeError as e:
@@ -141,6 +146,11 @@ def process_image(msg):
     batch.to('cpu')
     fv = tensor2numpy(yi).transpose(1, 2, 0)
     predicted_force_map = fv[:,:,:20]
+
+    if save_result:
+        cv2.imwrite(f'data/rgb{frame_no:05}.jpg', cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+        pd.to_pickle(predicted_force_map, f'data/forcemap{frame_no:05}.pkl')
+        frame_no += 1
 
     # fv = np.zeros((40, 40, 40))
     # fv[:, :, :20] = predicted_force_map[0]
