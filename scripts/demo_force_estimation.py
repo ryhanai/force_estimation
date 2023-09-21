@@ -27,8 +27,8 @@ image_topic = '/camera/color/image_raw'
 # model.load_weights('../runs/ae_cp.basket-filling2.model_resnet.20221202165608/cp.ckpt')
 
 model = fe.ForceEstimationResNetSeriaBasket()
-ckpt = torch.load('../runs/20230627_1730_52/CAE.pth')
-# ckpt = torch.load('../runs/20230725_1252_11/CAE.pth')
+# ckpt = torch.load('../runs/20230627_1730_52/CAE.pth')  # stable, moonshot intermediate report demo
+ckpt = torch.load('../runs/20230919_2116_44/CAE.pth')
 model.load_state_dict(ckpt['model_state_dict'])
 model.eval()
 
@@ -161,7 +161,7 @@ def process_image(msg, save_result=False):
                              fmap, 
                              draw_fmap=True, 
                              draw_force_gradient=False, 
-                             force_threshold=params['force_vis_threshold'])
+                             draw_range=[params['force_vis_threshold'], 0.9])
 
     if params['calc_lifting_direction'] == True:
         object_center = viewer.rviz_client.getObjectPosition()
