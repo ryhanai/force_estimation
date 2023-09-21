@@ -164,6 +164,11 @@ def process_image(msg, save_result=False):
                              draw_range=[params['force_vis_threshold'], 0.9])
 
     if params['calc_lifting_direction'] == True:
+        # unnormalize the predicted force
+        bounds = np.log([1e-8, 1e-3])
+        predicted_force_map = 1e6 * np.exp((predicted_force_map - 0.1) / 0.8 * (bounds[1] - bounds[0]) + bounds[0])
+        print(f'AVE predicted force: {np.average(predicted_force_map)}')
+
         object_center = viewer.rviz_client.getObjectPosition()
         v, omega = pick_direction_plan(predicted_force_map, object_center, object_radius=0.05)
         print(v, omega)
