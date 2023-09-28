@@ -87,11 +87,16 @@ def f_target(fps,
              x=np.array([0, 0, 1, 0, 0, 1]),
              omega=np.array([0, 0, 1]),
              delta=0.05,
-             alpha=1.0):
+             alpha=0.0):
     v = x[:3]
     omega = x[3:]
-    dp = v + alpha * np.cross(omega, fps - c)
-    return np.sum(fg_vecs * (delta * dp))
+    # dp = delta * (v + alpha * np.cross(omega, fps - c))
+    dp = delta * v
+    w = np.dot(fg_vecs, dp)
+    w_pos = np.sum(np.where(w > 0, w, 0))
+    w_neg = np.sum(np.where(w < 0, w, 0))
+    cost = 0.05 * w_pos + w_neg
+    return cost
 
 
 def pick_direction_plan(y_pred, object_center, object_radius, scale=[0.005, 0.01, 0.004]):
