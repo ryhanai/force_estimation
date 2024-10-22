@@ -58,6 +58,8 @@ class ForceDistributionViewer:
             mesh_file = 'simple_shelf.obj'
             mesh_pose = ([0, 0, 0], [0, 0, 0, 1])
             scale = [0.01, 0.01, 0.01]
+        elif scene == 'small_table':
+            return
         else:
             print(f'unknown scene: {scene}')
             return

@@ -24,6 +24,9 @@ class RVizClient:
         self._base_frame_id = "map"
         self.start_ros_node()
 
+    def __del__(self):
+        self._pub.unregister()
+
     def start_ros_node(self):
         rospy.init_node(self._node_name)
         self._pub = rospy.Publisher("scene_objects", MarkerArray, queue_size=1)
