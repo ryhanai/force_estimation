@@ -96,7 +96,7 @@ class Demonstration:
         self._viewer = force_distribution_viewer.ForceDistributionViewer.get_instance()
         self._planner = LiftingDirectionPlanner(self._fmap)
         self._object_center = None
-        self._lifting_direction_pub = rospy.Publisher('/force_estimation/lifting_direction', Vector3, queue_size=1)
+        self._lifting_direction_pub = rospy.Publisher(cfg.node.lifting_direction_topic, Vector3, queue_size=1)
 
     def crop_ROI(self, img):
         """
@@ -148,6 +148,7 @@ class Demonstration:
         except CvBridgeError as e:
             rospy.logerr('CvBridge Error: {0}'.format(e))
 
+        print_warn(f'SIZE={cv_image.shape}')
         if crop_roi:
             img = self.crop_ROI(cv_image)
         else:
@@ -194,7 +195,7 @@ class Demonstration:
 def main(cfg: DictConfig) -> None:
     demo = Demonstration(cfg)
     rospy.Subscriber(cfg.node.image_topic, Image, demo.process_image)
-    rospy.Subscriber("/force_estimation/object_position", Vector3, demo.object_position_callback)
+    rospy.Subscriber(cfg.node.object_position_topic, Vector3, demo.object_position_callback)
     param_srv = Server(force_estimationConfig, demo.parameter_callback)
     rospy.spin()
 
@@ -208,6 +209,15 @@ if __name__ == '__main__':
     else:
         main()
 
+
+# Test (publish a static image)
+# $ rosrun image_publisher image_publisher /home/artuser/Dataset/forcemap/tabletop_airec241008/rgb00000_00000.jpg 
+# There is no way to remap the image_publisher topic to a fixed topic. So, just relay it.
+# $ rosrun topic_tools relay /image_publisher_1729594651257683803/image_raw /camera/color/image_raw
+# Launch the viewer
+# $ roslaunch force_estimation viewer.launch
+# Launch rqt to change the demo settings online.
+# $ rqt
 
 # Send the object position using topic
 # rostopic pub -1 /force_estimation/object_position geometry_msgs/Vector3 "{x: 0, y: 0.0, z: 0.75}"
