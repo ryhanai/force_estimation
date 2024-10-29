@@ -98,15 +98,18 @@ class Demonstration:
         self._object_center = None
         self._lifting_direction_pub = rospy.Publisher(cfg.node.lifting_direction_topic, Vector3, queue_size=1)
 
-    def crop_ROI(self, img):
-        """
-            crop the center of the image
-        """
+    def preprocess_HDTV(self, img):
         c = self._cfg.preprocess.roi_center
         crop = 64
         roi_sz = [1280, 720]
         img = cv2.resize(img, roi_sz)
         roi = img[180+c[0]:540+c[0], 320+c[1]+crop:960+c[1]-crop]
+        return roi
+
+    def preprocess_VGA(self, img):
+        c = self._cfg.preprocess.roi_center
+        img = cv2.resize(img, [960, 720])
+        roi = img[180+c[0]:540+c[0], 224+c[1]:736+c[1]]
         return roi
 
     def do_plan(self, y, object_center):
@@ -142,17 +145,21 @@ class Demonstration:
 
         return direction
 
-    def process_image(self, msg, crop_roi=False, save_result=False):
+    def process_image(self, msg, save_result=False):
         try:
             cv_image = self._bridge.imgmsg_to_cv2(msg, "rgb8")
         except CvBridgeError as e:
             rospy.logerr('CvBridge Error: {0}'.format(e))
 
-        print_warn(f'SIZE={cv_image.shape}')
-        if crop_roi:
-            img = self.crop_ROI(cv_image)
+        if cv_image.shape == (480, 640, 3):
+            img = self.preprocess_VGA(cv_image)
+        elif cv_image.shape == (720, 1280, 3):
+            img = self.preprocess_HDTV(cv_image)
         else:
-            img = cv_image
+            print_warn(f'INPUT IMAGE SIZE={cv_image.shape}. Only VGA and HDTV are supported')
+            return
+
+        print_info(f'INPUT IMAGE SIZE={cv_image.shape}')
 
         y = self._tester.predict(img)
 

@@ -21,7 +21,7 @@ class RVizClient:
     def __init__(self):
         self._message_id = 0
         self._node_name = "force_distribution_publisher"
-        self._base_frame_id = "map"
+        self._base_frame_id = "fmap_frame"
         self.start_ros_node()
 
     def __del__(self):

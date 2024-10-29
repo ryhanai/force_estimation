@@ -10,7 +10,8 @@ forcemap:
   name: 'small_table'
 preprocess:
   # roi_size: [1280, 720]
-  roi_center: [-40, 75]  # [x, y]
+  # roi_center: [-40, 75]  # [x, y]
+  roi_center: [0, 0]  # [x, y]
   # side_crop: 64
 lifting_planning:
   object_radius: 0.05  # [m]
