@@ -73,7 +73,7 @@ $ rqt
   - “Interactive_marker(0)”: interactive markerで指定されている位置を対象物の位置として推定を行います．このときはtopicによる指定を受け付けません．
 
 ## viewer機能を別のRVizに統合する
-- 本ツールのviewerはRVizにtopic等の設定をしたものです．既にRVisを使っていてそこにviewer機能を統合することができます．
+- 本ツールのviewerはRVizにtopic等の設定をしたものです．既にRVizを使っていてそこにviewer機能を統合することができます．
   - 推定した力の分布やlifting directionはMarkerArray，pointcloudのoverlayにはPointCloud2，対象物位置指定にはInteractiveMarkersの各topicを利用します．
   - 下図を参考にtopicの設定を行ってください．
 ![viewer](https://github.com/user-attachments/assets/af9633f7-afb6-4852-923f-47c1fbd885f3)
