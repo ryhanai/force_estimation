@@ -47,10 +47,11 @@ class Tester:
         self.setup_model(cfg)
 
     def setup_model(self, cfg):
-        with open(Path(cfg.model.check_point_dir) / "args.json", "r") as f:
+        chkpt_dir = Path(__file__).absolute().parent.parent / 'runs' / cfg.model.checkpoint_directory
+        with open(chkpt_dir / "args.json", "r") as f:
             model_params = json.load(f)
 
-        weight_file = f"{cfg.model.check_point_dir}/{cfg.model.weight_file}"
+        weight_file = f"{chkpt_dir}/{cfg.model.weight_file}"
         print_info(f"loading pretrained weight [{weight_file}]")
         ckpt = torch.load(f"{weight_file}")
 
@@ -101,14 +102,14 @@ class Demonstration:
     def preprocess_HDTV(self, img):
         c = self._cfg.preprocess.roi_center
         crop = 64
-        roi_sz = [1280, 720]
+        roi_sz = (1280, 720)
         img = cv2.resize(img, roi_sz)
         roi = img[180+c[0]:540+c[0], 320+c[1]+crop:960+c[1]-crop]
         return roi
 
     def preprocess_VGA(self, img):
         c = self._cfg.preprocess.roi_center
-        img = cv2.resize(img, [960, 720])
+        img = cv2.resize(img, (960, 720))
         roi = img[180+c[0]:540+c[0], 224+c[1]:736+c[1]]
         return roi
 

@@ -4,7 +4,7 @@ node:
   object_position_topic: '/foundationpose/position'
   lifting_direction_topic: '/force_estimation/lifting_direction'
 model:
-  check_point_dir: '../runs/20241017_0052_35'
+  checkpoint_directory: '20241017_0052_35'
   weight_file: '08000.pth'
 forcemap:
   name: 'small_table'
