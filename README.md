@@ -1,19 +1,25 @@
 # Force Estimation
 <img width="220" alt="image" src="https://github.com/user-attachments/assets/e8decee6-7674-491f-9283-64297a077b41" />
 
-## 準備
+## Dockerを使う場合
+### Docker imageのダウンロード
+- Docker imageの実行とviewerの起動
+  ```sh
+  $ docker/run_force_estimation.sh
+  $ roslaunch force_estimation viewer_AIREC.launch
+  ```
+- Docker imageの実行
+  ```sh
+  $ ...
+  ```
+
 - 学習済みモデルの[download](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)と指定（configs/hydra_config.yaml）
   ```yaml
   check_point_dir: "../runs/20241017_0052_35"
   weight_file: '08000.pth'
   ```
 - ログに対する推論をする場合はbagファイルを[download](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
-- Docker Image (coming soon ...)
-  - 必要なものが揃っているので，ダウンロードしてそのまま実行できます．
-  - 実行手順
-  ```sh
-  $ ...
-  ```
+
 
 ## 環境設定
 ### 座標系の設定（launch/viewer_AIREC.launch）
@@ -62,6 +68,7 @@
 $ rqt
 ```
 ![rqt1](https://github.com/user-attachments/assets/4446416e-371a-4f99-9657-0a3c9ccb2071)
+- Plugins -> Configuration -> Dynamic Reconfigure -> force_distribution_publisherを選択します．
 - force_vis_threshold: 推定した力分布を可視化するときの閾値です．大きくすると大きな力のみを可視化します．多くの場合0.45くらいに設定します．
 - calc_lifting_direction: チェックが入っているときには，lifting directionの計算を行います．
 - object_position: lifting対象物の指定方法を選択します．
