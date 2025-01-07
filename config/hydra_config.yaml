@@ -17,3 +17,10 @@ lifting_planning:
   object_radius: 0.05  # [m]
 debug:
   save_result: False
+hydra:
+  output_subdir: null
+  run:
+    dir: .
+defaults:
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
