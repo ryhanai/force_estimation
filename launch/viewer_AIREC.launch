@@ -7,6 +7,6 @@
 	args="-d $(find force_estimation)/config/fmap_visualizer_AIREC.rviz"/>
   
   <!-- Currently, the base frame of the forcemap is hard-coded. -->
-  <node pkg="tf" type="static_transform_publisher" name="fmap_frame_broadcaster" args="0.765 0.03 0.18 0 0 0 world fmap_frame 100" />
+  <node pkg="tf" type="static_transform_publisher" name="fmap_frame_broadcaster" args="0.605 0.0 0.18 0 0 0 world fmap_frame 100" />
 
 </launch>
