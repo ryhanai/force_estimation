@@ -8,7 +8,7 @@
   ```sh
   $ git clone -b airec https://github.com/ryhanai/force_estimation.git
   ```
-  - [Docker image (??GB)](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
+  - [Docker image (5.7GB)](https://aist.box.com/s/e9moikwqli1x63708pk26aglonh84ykp)（産総研内のみ（Box））
   - [sampleログファイル (208MB)](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
 
 ### 実行（以下のパスはforce_estimationからの相対パス）
