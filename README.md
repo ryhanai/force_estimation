@@ -1,27 +1,72 @@
 # Force Estimation
 <img width="220" alt="image" src="https://github.com/user-attachments/assets/e8decee6-7674-491f-9283-64297a077b41" />
 
-## Dockerを使う場合
-### Docker imageのダウンロード
+## Dockerを利用する場合（おすすめ）
+
+### 準備
+- Docker imageとsampleログファイルをここからダウンロードします．
+  ```sh
+  $ git clone -b airec https://github.com/ryhanai/force_estimation.git
+  ```
+  - [Docker image (5.7GB)](https://aist.box.com/s/e9moikwqli1x63708pk26aglonh84ykp)（産総研内のみ（Box））
+  - [sampleログファイル (208MB)](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
+
+### 実行（以下のパスはforce_estimationからの相対パス）
 - Docker imageの実行とviewerの起動
   ```sh
   $ docker/run_force_estimation.sh
   $ roslaunch force_estimation viewer_AIREC.launch
   ```
-- Docker imageの実行
+- 認識プログラムの実行
   ```sh
-  $ ...
+  $ docker/shell.sh
+  $ rosrun force_estimation demo_force_estimation.py
+  ```
+- sampleログファイルの実行（ホストで実行します）
+  ```sh
+  $ rosbag play rosbag-airec-sr300-rgbd_pointcloud_tf_2024-10-25-20-17-55.bag -l
   ```
 
-- 学習済みモデルの[download](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)と指定（configs/hydra_config.yaml）
+### 認識プログラム実行中の設定変更
+- 設定プログラムを起動
+  ```sh
+  $ docker/shell.sh
+  $ rqt
+  ```
+![rqt1](https://github.com/user-attachments/assets/4446416e-371a-4f99-9657-0a3c9ccb2071)
+- Plugins -> Configuration -> Dynamic Reconfigure -> force_distribution_publisherを選択します．
+- force_vis_threshold: 推定した力分布を可視化するときの閾値です．大きくすると大きな力のみを可視化します．多くの場合0.45くらいに設定します．
+- calc_lifting_direction: チェックが入っているときには，lifting directionの計算を行います．
+- object_position: lifting対象物の指定方法を選択します．
+  - “Object_recognition(1)”: 対象物の位置・姿勢をtopicで送ります．
+    - topicによるlifting対象物（位置）を指定する例：
+    ```sh
+    $ rostopic pub -1 /foundationpose/position geometry_msgs/Vector3 "{x: 0.01, y: 0.1, z: 0.743}"
+    ```
+  - “Interactive_marker(0)”: interactive markerで指定されている位置を対象物の位置として推定を行います．**このときはtopicによる指定を受け付けません．**
+
+### AIRECシミュレータ（Gazebo）に対する実行
+- 上記の「ログファイルの再生」の替わりにAIRECのシミュレーション環境を起動することで，シミュレータ（Gazebo）から取得した画像に対して力分布の予測及びlifting directionの計算を行うことができます．
+- viewer（RVis）において，pointcloudのtopicがログとシミュレータで異なるので修正が必要な場合があります（シミュレータでは点群が/torobo/head/sr300/camera/depth/points）
+
+
+## 環境設定（変更する場合）
+
+### ROSの設定（docker/config）
+- ROS_MASTER_URIとROS_HOSTNAMEを環境にあわせて設定します．
+```sh
+ROS_MASTER_URI=http://192.168.10.109:11311
+ROS_HOSTNAME=192.168.10.109
+```
+
+### 学習済みモデルの指定（docker imageにはデフォルトで含まれ，設定されています）
+- 学習済みモデルの[download](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
+- 推論に使うモデルの指定（configs/hydra_config.yaml）
   ```yaml
-  check_point_dir: "../runs/20241017_0052_35"
+  checkpoint_directory: "20241017_0052_35"
   weight_file: '08000.pth'
   ```
-- ログに対する推論をする場合はbagファイルを[download](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
 
-
-## 環境設定
 ### 座標系の設定（launch/viewer_AIREC.launch）
 - 下記のようにstatic_transformを設定します．
   ```xml
@@ -49,43 +94,31 @@
   lifting_direction_topic: /force_estimation/lifting_direction
   ```
 
-## ログに対する実行
-1. 上でdownloadしたbagファイルを再生
-  ```sh
-  $ rosbag play rosbag-airec-sr300-rgbd_pointcloud_tf_2024-10-25-20-17-55.bag -l
-  ```
-2. viewerを起動
-  ```sh
-  $ roslaunch force_estimation viewer_AIREC.launch
-  ```
-3. 認識プログラムを実行
-  ```sh
-  $ rosrun force_estimation demo_force_estimation.py
-  ```
-
-## 認識プログラム実行中の設定変更
-```sh
-$ rqt
-```
-![rqt1](https://github.com/user-attachments/assets/4446416e-371a-4f99-9657-0a3c9ccb2071)
-- Plugins -> Configuration -> Dynamic Reconfigure -> force_distribution_publisherを選択します．
-- force_vis_threshold: 推定した力分布を可視化するときの閾値です．大きくすると大きな力のみを可視化します．多くの場合0.45くらいに設定します．
-- calc_lifting_direction: チェックが入っているときには，lifting directionの計算を行います．
-- object_position: lifting対象物の指定方法を選択します．
-  - “Object_recognition(1)”: 対象物の位置・姿勢をtopicで送ります．
-    - topicによるlifting対象物（位置）を指定する例：
-    ```sh
-    $ rostopic pub -1 /foundationpose/position geometry_msgs/Vector3 "{x: 0.01, y: 0.1, z: 0.743}"
-    ```
-  - “Interactive_marker(0)”: interactive markerで指定されている位置を対象物の位置として推定を行います．このときはtopicによる指定を受け付けません．
-
-## viewer機能を別のRVizに統合する
-- 本ツールのviewerはRVizにtopic等の設定をしたものです．既にRVizを使っていてそこにviewer機能を統合することができます．
+### viewer機能を別のRVizに統合する
+- 本ソフトウェアのviewerはRVizにtopic等の設定をしたものです．既にRVizを使っていてそこにviewer機能を統合することができます．
   - 推定した力の分布やlifting directionはMarkerArray，pointcloudのoverlayにはPointCloud2，対象物位置指定にはInteractiveMarkersの各topicを利用します．
   - 下図を参考にtopicの設定を行ってください．
 ![viewer](https://github.com/user-attachments/assets/af9633f7-afb6-4852-923f-47c1fbd885f3)
 
-## AIRECシミュレータ（Gazebo）に対する実行
-- 上記の「ログに対する実行」の替わりにAIRECのシミュレーション環境を起動することで，シミュレータ（Gazebo）から取得した画像に対して力分布の予測及びlifting directionの計算を行うことができます．
-  - そのためには，最初にbagを再生するのでなく，AIRECのシミュレーション環境を起動します．以降の手順は同じです．
-- viewer（RVis）において，pointcloudのtopicがログとシミュレータで異なるので適宜修正が必要な場合があります（シミュレータでは点群が/torobo/head/sr300/camera/depth/points）
+
+## Dockerを利用しない場合（under construction）
+
+### 準備
+```sh
+$ git clone
+$ pip install -r requirements.txt
+```
+
+### 実行
+1. viewerを起動
+  ```sh
+  $ roslaunch force_estimation viewer_AIREC.launch
+  ```
+2. 認識プログラムを実行
+  ```sh
+  $ rosrun force_estimation demo_force_estimation.py
+  ```
+3. ログファイルを再生
+  ```sh
+  $ rosbag play rosbag-airec-sr300-rgbd_pointcloud_tf_2024-10-25-20-17-55.bag -l
+  ```
