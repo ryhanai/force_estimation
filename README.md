@@ -62,8 +62,8 @@ ROS_HOSTNAME=192.168.10.109
 - 学習済みモデルの[download](https://drive.google.com/file/d/1-e002NMWVaFazrGgvLzdr5vN4YDN_w5V/view?usp=sharing)
 - 推論に使うモデルの指定（configs/hydra_config.yaml）
   ```yaml
-  checkpoint_directory: "20241017_0052_35"
-  weight_file: '08000.pth'
+  checkpoint_directory: "20250126_1251_33"
+  weight_file: '01000.pth'
   ```
 
 ### 座標系の設定（launch/viewer_AIREC.launch）
