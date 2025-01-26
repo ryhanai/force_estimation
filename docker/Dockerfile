@@ -66,8 +66,10 @@ RUN echo "source ${HOME}/catkin_ws/devel/setup.bash" >> ${HOME}/.bashrc
 # Install force estimation
 RUN cd ${HOME}/catkin_ws/src && git clone -b airec https://github.com/ryhanai/force_estimation.git
 RUN cd ${HOME}/catkin_ws && /bin/bash -c "source /opt/ros/noetic/setup.bash; catkin_make"
-ARG WEIGHT_FILE_ID=1X6BPIdAnkTGG3eNjlvRWjQaXOxQVkgq6
-ARG WEIGHT_FILE_NAME=20241017_0052_35.tgz
+# ARG WEIGHT_FILE_ID=1X6BPIdAnkTGG3eNjlvRWjQaXOxQVkgq6
+ARG WEIGHT_FILE_ID=1-e002NMWVaFazrGgvLzdr5vN4YDN_w5V
+# ARG WEIGHT_FILE_NAME=20241017_0052_35.tgz
+ARG WEIGHT_FILE_NAME=20250126_1251_33.tgz
 RUN mkdir -p ${HOME}/catkin_ws/src/force_estimation/runs \
     && cd ${HOME}/catkin_ws/src/force_estimation/runs \
     && curl -L "https://drive.usercontent.google.com/download?id=${WEIGHT_FILE_ID}&export=download&confirm=t" -o "${WEIGHT_FILE_NAME}" \
@@ -80,3 +82,5 @@ RUN cd ${HOME}/catkin_ws/src/force_estimation && pip install -r requirements.txt
 
 # How to build docker image
 # $ docker build --network=host -t force_estimation .
+# How to save docker image into a file
+# $ docker save force_estimation:latest > gzip force_estimation_latest.tar.gz

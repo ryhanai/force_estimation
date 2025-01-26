@@ -7,7 +7,7 @@ from pathlib import Path
 
 # PyTorch
 import torch
-import torch._dynamo
+# import torch._dynamo
 from torchinfo import summary
 
 # Parameter management
@@ -33,8 +33,8 @@ from dynamic_reconfigure.server import Server
 from force_estimation.cfg import force_estimationConfig
 
 
-torch._dynamo.config.verbose = False
-torch._dynamo.config.suppress_errors = True
+# torch._dynamo.config.verbose = False
+# torch._dynamo.config.suppress_errors = True
 
 
 class Tester:
