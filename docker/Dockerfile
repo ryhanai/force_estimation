@@ -79,6 +79,13 @@ RUN mkdir -p ${HOME}/catkin_ws/src/force_estimation/runs \
 RUN pip install -U pip
 RUN cd ${HOME}/catkin_ws/src/force_estimation && pip install -r requirements.txt
 
+# Install DepthAnythingV2
+ENV PYTHONPATH="${PYTHONPATH}:${HOME}/Depth-Anything-V2"
+RUN cd ${HOME} \
+    && git clone https://github.com/DepthAnything/Depth-Anything-V2.git \
+    && cd ${HOME}/Depth-Anything-V2 \
+    && pip install -r requirements.txt
+
 
 # How to build docker image
 # $ docker build --network=host -t force_estimation .
