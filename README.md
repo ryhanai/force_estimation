@@ -1,5 +1,4 @@
 # Force Estimation
-<img width="220" alt="image" src="https://github.com/user-attachments/assets/e8decee6-7674-491f-9283-64297a077b41" />
 
 ## Dockerを利用する場合（おすすめ）
 
@@ -8,7 +7,7 @@
   ```sh
   $ git clone -b airec https://github.com/ryhanai/force_estimation.git
   ```
-  - [Docker image (5.7GB)](https://aist.box.com/s/e9moikwqli1x63708pk26aglonh84ykp)（産総研内のみ（Box））
+  - [Docker image (5.7GB)](https://aist.box.com/s/6vd5su3t6olz4hl7ga4jrt5urbg55jro)（産総研内のみ（Box））
   - [sampleログファイル (208MB)](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
 
 ### 実行（以下のパスはforce_estimationからの相対パス）
@@ -60,11 +59,11 @@ ROS_HOSTNAME=192.168.10.109
 ```
 
 ### 学習済みモデルの指定（docker imageにはデフォルトで含まれ，設定されています）
-- 学習済みモデルの[download](https://drive.google.com/file/d/1b1lcsoz_MxtpR1gUzYOYI5AWGufV3sU9/view?usp=sharing)
+- 学習済みモデルの[download](https://drive.google.com/file/d/1-e002NMWVaFazrGgvLzdr5vN4YDN_w5V/view?usp=sharing)
 - 推論に使うモデルの指定（configs/hydra_config.yaml）
   ```yaml
-  checkpoint_directory: "20241017_0052_35"
-  weight_file: '08000.pth'
+  checkpoint_directory: "20250126_1251_33"
+  weight_file: '01000.pth'
   ```
 
 ### 座標系の設定（launch/viewer_AIREC.launch）
