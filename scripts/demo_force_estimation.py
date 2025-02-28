@@ -17,7 +17,8 @@ from omegaconf import DictConfig
 # Forcemap
 import forcemap
 import force_distribution_viewer
-from force_estimation_v4 import *
+# from force_estimation_v4 import *
+from force_estimation_v5 import *
 from pick_planning import LiftingDirectionPlanner
 from fm_utils import *
 
@@ -57,7 +58,7 @@ class Tester:
 
         model_class = model_params["model"]
         print_info(f"building model [{model_class}]")
-        model = globals()[model_class]()
+        model = globals()[model_class](initialize_encoder_with_pretrained_weight=False)
         model.load_state_dict(ckpt["model_state_dict"])
         model.to(self._device)
         model.eval()
