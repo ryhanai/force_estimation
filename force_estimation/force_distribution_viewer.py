@@ -3,7 +3,7 @@
 import colorsys
 import numpy as np
 import scipy.linalg
-import rviz_client
+from force_estimation import rviz_client
 
 
 class ForceDistributionViewer:
@@ -96,8 +96,8 @@ class ForceDistributionViewer:
             if draw_range[0] <= f and f <= draw_range[1]:
                 points.append([x, y, z])
                 hue = max(0, (0.7 - f) / 0.7)
-                r, g, b = colorsys.hsv_to_rgb(hue, 1, 1)
-                rgbas.append([r, g, b, 1])
+                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                rgbas.append([r, g, b, 1.0])
 
         self.rviz_client.draw_points(points, rgbas)
 

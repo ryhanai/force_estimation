@@ -15,27 +15,28 @@ import hydra
 from omegaconf import DictConfig
 
 # Forcemap
-import forcemap
-import force_distribution_viewer
-# from force_estimation_v4 import *
-from force_estimation_v5 import *
-from pick_planning import LiftingDirectionPlanner
-from fm_utils import *
+from force_estimation import forcemap, force_distribution_viewer
+from force_estimation.force_estimation_v5 import *
+from force_estimation.pick_planning import LiftingDirectionPlanner
+from force_estimation.fm_utils import *
 
 ## OpenCV
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
 ## ROS
-import rospy
+import rclpy
+from rclpy.node import Node
+from rcl_interfaces.msg import SetParametersResult
+from rcl_interfaces.msg import ParameterDescriptor, FloatingPointRange, IntegerRange
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Vector3
-from dynamic_reconfigure.server import Server
-from force_estimation.cfg import force_estimationConfig
 
 
 # torch._dynamo.config.verbose = False
 # torch._dynamo.config.suppress_errors = True
+
+import os
 
 
 class Tester:
@@ -83,7 +84,7 @@ class Tester:
         return y
 
 
-class Demonstration:
+class Demonstration():
     """
         main class for the demonstration
     """
@@ -91,14 +92,43 @@ class Demonstration:
     def __init__(self, cfg: DictConfig):
         self._cfg = cfg
         self._image_topic = cfg.node.image_topic
-        self._params = copy.copy(force_estimationConfig.defaults)
+        # self._params = copy.copy(force_estimationConfig.defaults)
         self._bridge = CvBridge()
         self._tester = Tester(cfg=cfg)
         self._fmap = forcemap.GridForceMap(cfg.forcemap.name)
         self._viewer = force_distribution_viewer.ForceDistributionViewer.get_instance()
+        self._node = self._viewer.rviz_client._node
         self._planner = LiftingDirectionPlanner(self._fmap)
         self._object_center = None
-        self._lifting_direction_pub = rospy.Publisher(cfg.node.lifting_direction_topic, Vector3, queue_size=1)
+
+        ir = IntegerRange()
+        ir.from_value = 0
+        ir.to_value = 1
+        ir.step = 1
+        pd = ParameterDescriptor(description='Set a sensor type (D415:0, SR305:1)', integer_range=[ir])
+        self._node.declare_parameter('sensor_type', 0)
+
+        fr = FloatingPointRange()
+        fr.from_value = 0.0
+        fr.to_value = 0.9
+        fr.step = 0.01
+        pd = ParameterDescriptor(description='Lower limit of force value to draw', floating_point_range=[fr])
+        self._node.declare_parameter('force_vis_threshold', 0.45, descriptor=pd)
+
+        pd = ParameterDescriptor(description='Set true if the lifting direction is needed')
+        self._node.declare_parameter('calc_lifting_direction', True, descriptor=pd)
+
+        ir = IntegerRange()
+        ir.from_value = 0
+        ir.to_value = 1
+        ir.step = 1
+        pd = ParameterDescriptor(description='Select how to specify object position (Interactive Marker:0, Object Recognition:1)', integer_range=[ir])
+        self._node.declare_parameter('object_position', 0)  # 'Interactive_marker' or 'Object_recognition'
+
+        self._node.add_on_set_parameters_callback(self.parameters_callback)
+        self._lifting_direction_pub = self._node.create_publisher(Vector3, cfg.node.lifting_direction_topic, 1)  # 1: queue_size
+        self._node.create_subscription(Image, cfg.node.image_topic, self.process_image, 1)
+        self._node.create_subscription(Vector3, cfg.node.object_position_topic, self.object_position_callback, 1)
 
     def preprocess_HDTV(self, img):
         c = self._cfg.preprocess.roi_center
@@ -136,7 +166,7 @@ class Demonstration:
         self._planner.draw_result(self._viewer, 
                                     object_center,
                                     direction,
-                                    rgba=[1, 0, 1, 1],
+                                    rgba=[1., 0., 1., 1.],
                                     arrow_scale=[0.005, 0.01, 0.004])
 
         msg = Vector3()
@@ -151,7 +181,7 @@ class Demonstration:
         try:
             cv_image = self._bridge.imgmsg_to_cv2(msg, "rgb8")
         except CvBridgeError as e:
-            rospy.logerr('CvBridge Error: {0}'.format(e))
+            self.get_logger().error(f'CvBridge Error: {e}')
 
         if cv_image.shape == (480, 640, 3):
             img = self.preprocess_VGA(cv_image)
@@ -167,12 +197,14 @@ class Demonstration:
 
         self._fmap.set_values(y)
         bin_state = None
+
         self._viewer.publish_bin_state(bin_state,
                                        self._fmap, 
-                                       draw_range=[self._params['force_vis_threshold'], 0.9])
+                                       draw_range=[self._node.get_parameter('force_vis_threshold').value, 0.9])
 
-        if self._params['calc_lifting_direction'] == True:
-            if self._params['object_position'] == force_estimationConfig.force_estimation_Interactive_marker:
+
+        if self._node.get_parameter('calc_lifting_direction').value == True:
+            if self._node.get_parameter('object_position').value == 0:
                 self._object_center = self._viewer.rviz_client.getObjectPosition()
                 self.do_plan(y, self._object_center)
             else:
@@ -189,35 +221,33 @@ class Demonstration:
         cv2.waitKey(1)
 
     def object_position_callback(self, msg: Vector3):
-        if self._params['object_position'] != force_estimationConfig.force_estimation_Object_recognition:
-            print_warn("object recognition is accepted only if 'object_position' is set to 'Object_Recognition'")
+        if self._node.get_parameter('object_position').value != 1:
+            print_warn("object recognition is accepted only if 'object_position' is set to '1 (Object_Recognition)'")
         else:
             self._object_center = np.array([msg.x, msg.y, msg.z])
 
-    def parameter_callback(self, config, level):
-        rospy.loginfo("""Reconfigure Request: {calc_lifting_direction}, {force_vis_threshold}, {sensor_type}""".format(**config))
-        self._params = config
-        return config
+    def parameters_callback(self, params):
+        self._node.get_logger().info(f'Reconfigure Request: {params}')
+        return SetParametersResult(successful=True)
 
 
 @hydra.main(config_name='hydra_config.yaml', version_base=None, config_path='../config')
 def main(cfg: DictConfig) -> None:
     demo = Demonstration(cfg)
-    rospy.Subscriber(cfg.node.image_topic, Image, demo.process_image)
-    rospy.Subscriber(cfg.node.object_position_topic, Vector3, demo.object_position_callback)
-    param_srv = Server(force_estimationConfig, demo.parameter_callback)
-    rospy.spin()
+    # rclpy.spin(demo._node)
+    # demo_node.desctoy_node()
+    # rclpy.shutdown()
 
 
-import rosgraph
+# import rosgraph
 
 if __name__ == '__main__':
-    if not rosgraph.is_master_online():
-        print_error("Please run roscore before executing this script")
-        raise Exception('roscore is not ready')
-    else:
-        main()
-
+    main()
+    # if not rosgraph.is_master_online():
+    #     print_error("Please run roscore before executing this script")
+    #     raise Exception('roscore is not ready')
+    # else:
+    #     main()
 
 # Test (publish a static image)
 # $ rosrun image_publisher image_publisher /home/artuser/Dataset/forcemap/tabletop_airec241008/rgb00000_00000.jpg 

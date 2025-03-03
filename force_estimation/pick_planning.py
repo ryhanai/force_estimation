@@ -71,8 +71,8 @@ class LiftingDirectionPlanner:
 
         return pick_direction, pick_omega
 
-    def draw_result(self, viewer, object_center, pick_direction, rgba=[1, 0, 1, 1], arrow_scale=[0.005, 0.01, 0.004]):
-        viewer.rviz_client.draw_sphere(object_center, [1, 0, 0, 1], [0.01, 0.01, 0.01])
+    def draw_result(self, viewer, object_center, pick_direction, rgba=[1., 0., 1., 1.], arrow_scale=[0.005, 0.01, 0.004]):
+        viewer.rviz_client.draw_sphere(object_center, rgba, [0.01, 0.01, 0.01])
         viewer.rviz_client.draw_arrow(object_center, object_center + pick_direction * 0.1, rgba, arrow_scale)
 
 

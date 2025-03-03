@@ -1,0 +1,25 @@
+- ROS2 ではdynamic_reconfigureは廃止され、動的パラメータ設定は標準のパラメータ機能に統合されすべてのノードがパラメータサーバーを持つ
+
+- ROS 1での動的パラメータ設定
+ - cfg ファイルを作成して、動的に設定可能なパラメータを定義する
+ - cfg ファイルからコードを生成する
+ - コールバック関数を定義して、パラメータを更新する処理を書く
+
+- ROS 2での動的パラメータ設定
+ - パラメータをノードで定義する（declare_parameter メソッドを使用）
+ - add_on_set_parameters_callbackメソッドを使用して、パラメータが変更されたときに呼び出されるコールバック関数を登録する
+ - コールバック関数内で、新しいパラメータ値を更新する処理を書く
+
+- パラメータ変更
+ - コマンドから
+  - ros2 param set /param_name int_param 20
+ - rqtから
+  - ros2 run rqt_reconfigure rqt_reconfigure
+
+enum型のparameter
+parameterの説明，range
+
+  rospy.loginfo -> self.get_logger().info()
+  rosgraph
+
+create_publisherでqueue_size=1の指定方法（今は指定していない）

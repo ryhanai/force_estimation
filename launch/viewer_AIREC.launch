@@ -1,24 +1,26 @@
+<?xml version='1.0' ?>
+
 <launch>
   <arg name="use_rviz" default="true"/>
-  <arg name="broadcast_sensor_frame" default="false"/>
+  <arg name="broadcast_sensor_frame" default="true"/>
 
   <!-- Launch rviz -->
-  <node if="$(arg use_rviz)"
-	  name="rviz" pkg="rviz" type="rviz"
-	  args="-d $(find force_estimation)/config/fmap_visualizer_AIREC.rviz"/>
+  <node if="$(var use_rviz)" 
+    pkg="rviz2" exec="rviz2"
+	  args="-d $(find-pkg-share force_estimation)/config/fmap_visualizer_AIREC.rviz"/>
   
   <!-- 
      ForceMap is drawn in "fmap_frame", which is defined by the transform from "map" to "fmap_frame"
     -->
-  <node pkg="tf" type="static_transform_publisher" name="fmap_frame_broadcaster" args="0.650 0.0 0.18 0 0 0 map fmap_frame 100" />
-  <!--  <node pkg="tf" type="static_transform_publisher" name="fmap_frame_broadcaster" args="0.605 0.0 0.18 0 0 0 map fmap_frame 100" /> -->
+  <node pkg="tf2_ros" exec="static_transform_publisher" args="0.650 0.0 0.18 0 0 0 map fmap_frame" />
+  <!--  <node pkg="tf" exec="static_transform_publisher" args="0.605 0.0 0.18 0 0 0 map fmap_frame 100" /> -->
 
   <!--
     When you use a stand-alone camera (not the one mounted on AIREC), the camera frame is not defined.
     Thus, you need to define the transfom from "map" to "camera_link" to align the DepthCloud/PointCloud from the sensor.
     -->
-  <node if="$(arg broadcast_sensor_frame)"
-    pkg="tf" type="static_transform_publisher" name="sensor_frame_broadcaster" args="0.161 -0.013 1.383 0.039 0.769 0.039 map camera_link 100" />
+  <node if="$(var broadcast_sensor_frame)"
+    pkg="tf2_ros" exec="static_transform_publisher" args="0.161 -0.013 1.383 0.039 0.769 0.039 map camera_link" />
 
 <!-- 
   real AIREC: head/sr300/camera_color_frame
