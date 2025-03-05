@@ -12,7 +12,7 @@
   <!-- 
      ForceMap is drawn in "fmap_frame", which is defined by the transform from "map" to "fmap_frame"
     -->
-  <node pkg="tf2_ros" exec="static_transform_publisher" args="0.650 0.0 0.18 0 0 0 map fmap_frame" />
+  <node pkg="tf2_ros" exec="static_transform_publisher" args="0.650 0.0 0.17 0 0 0 map fmap_frame" />
   <!--  <node pkg="tf" exec="static_transform_publisher" args="0.605 0.0 0.18 0 0 0 map fmap_frame 100" /> -->
 
   <!--

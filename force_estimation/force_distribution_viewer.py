@@ -74,13 +74,15 @@ class ForceDistributionViewer:
             name, pose = object_state
             scene = fmap.get_scene()
             if scene == 'seria_basket':
-                self.rviz_client.draw_mesh("package://force_estimation/meshes/ycb/{}/google_16k/textured.dae".format(name),
+                self.rviz_client.draw_mesh(f'package://force_estimation/meshes/ycb/{name}/google_16k/textured.dae',
                                         pose,
                                         (0.5, 0.5, 0.5, 0.3))
             elif scene == 'konbini_shelf':
-                self.rviz_client.draw_mesh("package://force_estimation/meshes/konbini/{}.obj".format(name),
+                self.rviz_client.draw_mesh(f'package://force_estimation/meshes/konbini/{name}.obj',
                                         pose,
                                         (0.5, 0.5, 0.5, 0.3))
+            else:
+                self.rviz_client.draw_mesh(f'package/force_estimation/meshes_extra/{name}/textured.obj', pose, (0.5, 0.5, 0.5, 0.4))
 
     def draw_force_distribution(self, positions, fvals, draw_range=[0.5, 0.9]):
         fvals = fvals.flatten()
@@ -110,3 +112,11 @@ class ForceDistributionViewer:
         pos_val_pairs = [(p, g) for (p, g) in zip(positions, g_vecs) if scipy.linalg.norm(g) > threshold]
         positions, values = zip(*pos_val_pairs)
         self.draw_vector_field(np.array(positions), np.array(values), scale=scale)
+
+    def draw_calibration_objects(self):
+        rgba = [1.,1.,1.,0.6]
+        height = 0.74
+        self.rviz_client.draw_cube([0.045,0.075,height], rgba, [0.09,0.15,0.03])
+        self.rviz_client.draw_cube([0.045,-0.075,height], rgba, [0.09,0.15,0.03])
+        self.rviz_client.draw_cube([-0.045,0.075,height], rgba, [0.09,0.15,0.03])
+        self.rviz_client.draw_cube([-0.045,-0.075,height], rgba, [0.09,0.15,0.03])        

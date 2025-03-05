@@ -4,6 +4,8 @@ import numpy as np
 import copy
 import json
 from pathlib import Path
+from collections import deque
+from sklearn.cluster import KMeans
 
 # PyTorch
 import torch
@@ -100,6 +102,10 @@ class Demonstration():
         self._node = self._viewer.rviz_client._node
         self._planner = LiftingDirectionPlanner(self._fmap)
         self._object_center = None
+        self._time_window = 8
+        self._n_clusters = 4
+        self._lifting_direction_queue = deque(maxlen=self._time_window)
+        self._lifting_direction_smoother = KMeans(self._n_clusters)
 
         ir = IntegerRange()
         ir.from_value = 0
@@ -111,7 +117,7 @@ class Demonstration():
         fr = FloatingPointRange()
         fr.from_value = 0.0
         fr.to_value = 0.9
-        fr.step = 0.01
+        # fr.step = 0.01
         pd = ParameterDescriptor(description='Lower limit of force value to draw', floating_point_range=[fr])
         self._node.declare_parameter('force_vis_threshold', 0.45, descriptor=pd)
 
@@ -124,6 +130,15 @@ class Demonstration():
         ir.step = 1
         pd = ParameterDescriptor(description='Select how to specify object position (Interactive Marker:0, Object Recognition:1)', integer_range=[ir])
         self._node.declare_parameter('object_position', 0)  # 'Interactive_marker' or 'Object_recognition'
+
+        fr = FloatingPointRange()
+        fr.from_value = 0.01
+        fr.to_value = 0.20
+        pd = ParameterDescriptor(description='Object radius used for lifting planning', floating_point_range=[fr])
+        self._node.declare_parameter('object_radius', 0.12, descriptor=pd)
+
+        pd = ParameterDescriptor(description='Set true to draw calibration objects')
+        self._node.declare_parameter('draw_calibration_objects', False, descriptor=pd)
 
         self._node.add_on_set_parameters_callback(self.parameters_callback)
         self._lifting_direction_pub = self._node.create_publisher(Vector3, cfg.node.lifting_direction_topic, 1)  # 1: queue_size
@@ -157,17 +172,30 @@ class Demonstration():
         v_omega = self._planner.pick_direction_plan(
             predicted_force_map,
             object_center,
-            object_radius=self._cfg.lifting_planning.object_radius,
+            object_radius=self._node.get_parameter('object_radius').value,
         )
         print_info(f"planning result [V, omega]: {v_omega[0]}, {v_omega[1]}")
 
-        # draw the planned lifting direction
         direction = v_omega[0]
+
+        smooth_direction = True
+        if smooth_direction:
+            self._lifting_direction_queue.append(direction)
+            if len(self._lifting_direction_queue) > self._n_clusters:
+                self._lifting_direction_smoother.fit(self._lifting_direction_queue)
+                labels = self._lifting_direction_smoother.labels_
+                direction = self._lifting_direction_smoother.cluster_centers_[np.argmax(np.unique(labels, return_counts=True)[1])]            
+
+        if direction[2] < 0.0:
+            direction[2] = 0.0
+        direction /= np.linalg.norm(direction)
+
+        # draw the planned lifting direction
         self._planner.draw_result(self._viewer, 
                                     object_center,
                                     direction,
                                     rgba=[1., 0., 1., 1.],
-                                    arrow_scale=[0.005, 0.01, 0.004])
+                                    arrow_scale=[0.01, 0.02, 0.008])
 
         msg = Vector3()
         msg.x = direction[0]
@@ -211,6 +239,9 @@ class Demonstration():
                 if isinstance(self._object_center, np.ndarray):
                     print_error(f"{self._object_center}")
                     self.do_plan(y, self._object_center)
+
+        if self._node.get_parameter('draw_calibration_objects').value == True:
+            self._viewer.draw_calibration_objects()
 
         # refresh the viewer
         self._viewer.rviz_client.show()

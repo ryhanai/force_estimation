@@ -209,7 +209,7 @@ class RVizClient:
         marker.pose.orientation.w = 1.0
         marker.scale = self.to_Vector3(scale)
         marker.color = self.to_ColorRGBA(rgba)
-        marker.points = [self.to_Point(tail), self.to_Point(tip)]  # tail may be *tail, tip may be *tip
+        marker.points = [self.to_Point(tail), self.to_Point(tip)]
 
         self._markerArray.markers.append(marker)
 
@@ -222,6 +222,17 @@ class RVizClient:
 
     def draw_sphere(self, center, rgba, scale):
         marker = self._make_marker(Marker.SPHERE)
+        marker.pose.position = self.to_Point(center)
+        marker.pose.orientation.x = 0.0
+        marker.pose.orientation.y = 0.0
+        marker.pose.orientation.z = 0.0
+        marker.pose.orientation.w = 1.0
+        marker.scale = self.to_Vector3(scale)
+        marker.color = self.to_ColorRGBA(rgba)
+        self._markerArray.markers.append(marker)
+
+    def draw_cube(self, center, rgba, scale):
+        marker = self._make_marker(Marker.CUBE)
         marker.pose.position = self.to_Point(center)
         marker.pose.orientation.x = 0.0
         marker.pose.orientation.y = 0.0
