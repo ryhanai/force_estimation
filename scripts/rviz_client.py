@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import rospy
-from visualization_msgs.msg import Marker, MarkerArray, InteractiveMarker, InteractiveMarkerControl
-from std_msgs.msg import ColorRGBA
-from geometry_msgs.msg import Point, Vector3
-from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 import numpy as np
+import rospy
+from geometry_msgs.msg import Point, Vector3
+from interactive_markers.interactive_marker_server import \
+    InteractiveMarkerServer
+from std_msgs.msg import ColorRGBA
+from visualization_msgs.msg import (InteractiveMarker,
+                                    InteractiveMarkerControl, Marker,
+                                    MarkerArray)
 
 
 def normalizeQuaternion(quaternion_msg):
@@ -37,7 +40,7 @@ class RVizClient:
         int_marker.name = 'object_center'
         int_marker.description = 'Object Center'
         int_marker.pose.position = Point(0.0, 0.0, 0.78)
-        int_marker.scale = 0.03
+        int_marker.scale = 0.1
         box_marker = self._make_marker(Marker.SPHERE)
         box_marker.pose = int_marker.pose
         box_marker.scale = Vector3(0.005, 0.005, 0.005)

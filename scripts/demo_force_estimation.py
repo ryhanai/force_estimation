@@ -1,38 +1,36 @@
 #!/usr/bin/env python3
 
-import numpy as np
 import copy
 import json
+from collections import deque
 from pathlib import Path
-
-# PyTorch
-import torch
-# import torch._dynamo
-from torchinfo import summary
-
-# Parameter management
-import hydra
-from omegaconf import DictConfig
-
-# Forcemap
-import forcemap
-import force_distribution_viewer
-# from force_estimation_v4 import *
-from force_estimation_v5 import *
-from pick_planning import LiftingDirectionPlanner
-from fm_utils import *
 
 ## OpenCV
 import cv2
-from cv_bridge import CvBridge, CvBridgeError
-
+import force_distribution_viewer
+# Forcemap
+import forcemap
+# Parameter management
+import hydra
+import numpy as np
 ## ROS
 import rospy
-from sensor_msgs.msg import Image
-from geometry_msgs.msg import Vector3
+# PyTorch
+import torch
+from cv_bridge import CvBridge, CvBridgeError
 from dynamic_reconfigure.server import Server
-from force_estimation.cfg import force_estimationConfig
+from fm_utils import *
+# from force_estimation_v4 import *
+from force_estimation_v5 import *
+from geometry_msgs.msg import Vector3
+from omegaconf import DictConfig
+from pick_planning import LiftingDirectionPlanner
+from sensor_msgs.msg import Image
+from sklearn.cluster import KMeans
+# import torch._dynamo
+from torchinfo import summary
 
+from force_estimation.cfg import force_estimationConfig
 
 # torch._dynamo.config.verbose = False
 # torch._dynamo.config.suppress_errors = True
@@ -98,6 +96,10 @@ class Demonstration:
         self._viewer = force_distribution_viewer.ForceDistributionViewer.get_instance()
         self._planner = LiftingDirectionPlanner(self._fmap)
         self._object_center = None
+        self._time_window = 8
+        self._n_clusters = 4
+        self._lifting_direction_queue = deque(maxlen=self._time_window)
+        self._lifting_direction_smoother = KMeans(self._n_clusters)
         self._lifting_direction_pub = rospy.Publisher(cfg.node.lifting_direction_topic, Vector3, queue_size=1)
 
     def preprocess_HDTV(self, img):
@@ -133,11 +135,24 @@ class Demonstration:
 
         # draw the planned lifting direction
         direction = v_omega[0]
+
+        smooth_direction = True
+        if smooth_direction:
+            self._lifting_direction_queue.append(direction)
+            if len(self._lifting_direction_queue) > self._n_clusters:
+                self._lifting_direction_smoother.fit(self._lifting_direction_queue)
+                labels = self._lifting_direction_smoother.labels_
+                direction = self._lifting_direction_smoother.cluster_centers_[np.argmax(np.unique(labels, return_counts=True)[1])]
+
+        if direction[2] < 0.0:
+            direction[2] = 0.0
+        direction /= np.linalg.norm(direction)
+
         self._planner.draw_result(self._viewer, 
                                     object_center,
                                     direction,
                                     rgba=[1, 0, 1, 1],
-                                    arrow_scale=[0.005, 0.01, 0.004])
+                                    arrow_scale=[0.01, 0.02, 0.008])
 
         msg = Vector3()
         msg.x = direction[0]
