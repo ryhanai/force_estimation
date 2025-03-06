@@ -14,7 +14,7 @@ preprocess:
   roi_center: [0, 0]  # [x, y]
   # side_crop: 64
 lifting_planning:
-  object_radius: 0.05  # [m]
+  # object_radius: 0.05  # [m] # moved to dynamic reconfigure
 debug:
   save_result: False
 hydra:

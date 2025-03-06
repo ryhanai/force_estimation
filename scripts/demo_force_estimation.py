@@ -129,15 +129,14 @@ class Demonstration:
         v_omega = self._planner.pick_direction_plan(
             predicted_force_map,
             object_center,
-            object_radius=self._cfg.lifting_planning.object_radius,
+            object_radius=self._params['object_radius'],
         )
         print_info(f"planning result [V, omega]: {v_omega[0]}, {v_omega[1]}")
 
         # draw the planned lifting direction
         direction = v_omega[0]
 
-        smooth_direction = True
-        if smooth_direction:
+        if self._params['smooth_lifting_direction']:
             self._lifting_direction_queue.append(direction)
             if len(self._lifting_direction_queue) > self._n_clusters:
                 self._lifting_direction_smoother.fit(self._lifting_direction_queue)
