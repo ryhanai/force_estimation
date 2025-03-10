@@ -233,7 +233,7 @@ class Demonstration():
 
         if self._node.get_parameter('calc_lifting_direction').value == True:
             if self._node.get_parameter('object_position').value == 0:
-                self._object_center = self._viewer.rviz_client.getObjectPosition()
+                self._object_center = self._viewer.rviz_client.getInteractiveMarkerPose()[0]
                 self.do_plan(y, self._object_center)
             else:
                 if isinstance(self._object_center, np.ndarray):

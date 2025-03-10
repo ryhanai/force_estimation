@@ -26,16 +26,28 @@ class ForceDistributionViewer:
         if not cls._unique_instance:
             cls._unique_instance = cls.__internal_new__()
             cls.rviz_client = rviz_client.RVizClient()
+            cls._unique_instance.set_bin_RGBA([0.5, 0.5, 0.5, 0.4])
         return cls._unique_instance
+
+    def set_object_info(self, object_info):
+        self._object_info = object_info
+
+    def set_bin_RGBA(self, rgba):
+        self._rgba = rgba
 
     def publish_bin_state(self,
                           bin_state,
                           fmap,
                           draw_fmap=True,
                           draw_force_gradient=False,
-                          draw_range=[0.5, 0.9]):
-        self.rviz_client.delete_all()
-        self.draw_bin(fmap)
+                          draw_range=[0.5, 0.9],
+                          refresh=True,
+                          draw_bin_objects=True):
+
+        if refresh:
+            self.rviz_client.delete_all()
+        if draw_bin_objects:
+            self.draw_bin_objects(fmap)
 
         positions = fmap.get_positions()
         fvals = fmap.get_values()
@@ -48,41 +60,35 @@ class ForceDistributionViewer:
             self.draw_force_gradient(positions, fvals)
         self.rviz_client.show()
 
-    def draw_bin(self, fmap):
+    def draw_bin_objects(self, fmap):
         scene = fmap.get_scene()
         if scene == 'seria_basket':
-            mesh_file = 'seria_basket.dae'
-            mesh_pose = ([0, 0, 0.73], [0, 0, 0.70711, 0.70711])
-            scale = [1, 1, 1]
+            mesh_file = 'env/seria_basket.dae'
+            mesh_pose = ([0., 0., 0.73], [0., 0., 0.70711, 0.70711])
+            scale = [1., 1., 1.]
         elif scene == 'konbini_shelf':
-            mesh_file = 'simple_shelf.obj'
-            mesh_pose = ([0, 0, 0], [0, 0, 0, 1])
+            mesh_file = 'env/simple_shelf.obj'
+            mesh_pose = ([0., 0., 0.], [0., 0., 0., 1.])
             scale = [0.01, 0.01, 0.01]
         elif scene == 'small_table':
-            return
+            mesh_file = 'env/table_surface.obj'
+            mesh_pose = ([0., 0., 0.68], [0., 0., 0., 1.])
+            scale = [1., 1., 1.]
         else:
-            print(f'unknown scene: {scene}')
+            print(f'[VIEWER] unknown scene: {scene}')
             return
 
-        self.rviz_client.draw_mesh(f"package://force_estimation/meshes_extra/{mesh_file}",
+        self.rviz_client.draw_mesh(f"package://force_estimation/meshes/{mesh_file}",
                                    mesh_pose,
-                                   rgba=(0.5, 0.5, 0.5, 0.2),
+                                   rgba=self._rgba,
                                    scale=scale)
 
-    def draw_objects(self, bin_state, fmap):
+    def draw_objects(self, bin_state):
         for object_state in bin_state:
             name, pose = object_state
-            scene = fmap.get_scene()
-            if scene == 'seria_basket':
-                self.rviz_client.draw_mesh(f'package://force_estimation/meshes/ycb/{name}/google_16k/textured.dae',
-                                        pose,
-                                        (0.5, 0.5, 0.5, 0.3))
-            elif scene == 'konbini_shelf':
-                self.rviz_client.draw_mesh(f'package://force_estimation/meshes/konbini/{name}.obj',
-                                        pose,
-                                        (0.5, 0.5, 0.5, 0.3))
-            else:
-                self.rviz_client.draw_mesh(f'package/force_estimation/meshes_extra/{name}/textured.obj', pose, (0.5, 0.5, 0.5, 0.4))
+            mesh_file, scale = self._object_info.rviz_mesh_file(name)
+            assert mesh_file, f"mesh file for {name} not found"
+            self.rviz_client.draw_mesh(mesh_file, pose, self._rgba)
 
     def draw_force_distribution(self, positions, fvals, draw_range=[0.5, 0.9]):
         fvals = fvals.flatten()
