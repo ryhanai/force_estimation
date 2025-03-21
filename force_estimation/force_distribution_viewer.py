@@ -2,7 +2,6 @@
 
 import colorsys
 import numpy as np
-import scipy.linalg
 from force_estimation import rviz_client
 
 
@@ -43,6 +42,9 @@ class ForceDistributionViewer:
                           draw_range=[0.5, 0.9],
                           refresh=True,
                           draw_bin_objects=True):
+        """
+            deprecated, use draw_bin_state() and show()
+        """
 
         if refresh:
             self.rviz_client.delete_all()
@@ -53,7 +55,32 @@ class ForceDistributionViewer:
         fvals = fmap.get_values()
 
         if bin_state is not None:
-            self.draw_objects(bin_state, fmap)
+            self.draw_objects(bin_state)
+        if draw_fmap:
+            self.draw_force_distribution(positions, fvals, draw_range=draw_range)
+        if draw_force_gradient:
+            self.draw_force_gradient(positions, fvals)
+        self.rviz_client.show()
+
+    def draw_bin_state(self,
+                       bin_state,
+                       fmap,
+                       draw_fmap=True,
+                       draw_force_gradient=False,
+                       draw_range=[0.5, 0.9],
+                       refresh=True,
+                       draw_bin_objects=True):
+
+        if refresh:
+            self.rviz_client.delete_all()
+        if draw_bin_objects:
+            self.draw_bin_objects(fmap)
+
+        positions = fmap.get_positions()
+        fvals = fmap.get_values()
+
+        if bin_state is not None:
+            self.draw_objects(bin_state)
         if draw_fmap:
             self.draw_force_distribution(positions, fvals, draw_range=draw_range)
         if draw_force_gradient:
@@ -115,7 +142,7 @@ class ForceDistributionViewer:
     def draw_force_gradient(self, positions, fvals, scale=0.3, threshold=0.008):
         gxyz = np.gradient(- fvals)
         g_vecs = np.column_stack([g.flatten() for g in gxyz])
-        pos_val_pairs = [(p, g) for (p, g) in zip(positions, g_vecs) if scipy.linalg.norm(g) > threshold]
+        pos_val_pairs = [(p, g) for (p, g) in zip(positions, g_vecs) if np.linalg.norm(g) > threshold]
         positions, values = zip(*pos_val_pairs)
         self.draw_vector_field(np.array(positions), np.array(values), scale=scale)
 
@@ -126,3 +153,9 @@ class ForceDistributionViewer:
         self.rviz_client.draw_cube([0.045,-0.075,height], rgba, [0.09,0.15,0.03])
         self.rviz_client.draw_cube([-0.045,0.075,height], rgba, [0.09,0.15,0.03])
         self.rviz_client.draw_cube([-0.045,-0.075,height], rgba, [0.09,0.15,0.03])        
+
+    def clear(self):
+        self.rviz_client.delete_all()
+
+    def show(self):
+        self.rviz_client.show()
