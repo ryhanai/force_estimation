@@ -18,13 +18,14 @@ from omegaconf import DictConfig
 
 # Forcemap
 from force_estimation import forcemap, force_distribution_viewer
-from force_estimation.force_estimation_v5 import *
+# import force_estimation.force_estimation_v4
+# import force_estimation.force_estimation_v5
 from force_estimation.pick_planning import LiftingDirectionPlanner
 from force_estimation.fm_utils import *
 
 ## OpenCV
 import cv2
-from cv_bridge import CvBridge, CvBridgeError
+import ros2_numpy  # alternative for some functions in cv_bridge (doesn't work with numpy 2)
 
 ## ROS
 import rclpy
@@ -39,6 +40,8 @@ from geometry_msgs.msg import Vector3
 # torch._dynamo.config.suppress_errors = True
 
 import os
+import re
+import importlib
 
 
 class Tester:
@@ -55,13 +58,17 @@ class Tester:
         with open(chkpt_dir / "args.json", "r") as f:
             model_params = json.load(f)
 
+        model_class_path = model_params["model"]
+        print_info(f"building model [{model_class_path}]")
+        mod_name = re.sub('\.[^\.]+$', '', model_class_path)
+        model_module = importlib.import_module(mod_name)
+        model_class_name = re.sub('^.*\.', '', model_class_path)
+        model = getattr(model_module, model_class_name)(initialize_encoder_with_pretrained_weight=False)
+
         weight_file = f"{chkpt_dir}/{cfg.model.weight_file}"
         print_info(f"loading pretrained weight [{weight_file}]")
         ckpt = torch.load(f"{weight_file}")
 
-        model_class = model_params["model"]
-        print_info(f"building model [{model_class}]")
-        model = globals()[model_class](initialize_encoder_with_pretrained_weight=False)
         model.load_state_dict(ckpt["model_state_dict"])
         model.to(self._device)
         model.eval()
@@ -95,7 +102,6 @@ class Demonstration():
         self._cfg = cfg
         self._image_topic = cfg.node.image_topic
         # self._params = copy.copy(force_estimationConfig.defaults)
-        self._bridge = CvBridge()
         self._tester = Tester(cfg=cfg)
         self._fmap = forcemap.GridForceMap(cfg.forcemap.name)
         self._viewer = force_distribution_viewer.ForceDistributionViewer.get_instance()
@@ -207,14 +213,16 @@ class Demonstration():
 
     def process_image(self, msg, save_result=False):
         try:
-            cv_image = self._bridge.imgmsg_to_cv2(msg, "rgb8")
-        except CvBridgeError as e:
-            self.get_logger().error(f'CvBridge Error: {e}')
+            cv_image = ros2_numpy.numpify(msg) 
+        except TypeError as e:
+            self.get_logger().error(f'Type Error: {e}')
 
         if cv_image.shape == (480, 640, 3):
             img = self.preprocess_VGA(cv_image)
         elif cv_image.shape == (720, 1280, 3):
             img = self.preprocess_HDTV(cv_image)
+        elif cv_image.shape == (360, 512, 3):
+            img = cv_image
         else:
             print_warn(f'INPUT IMAGE SIZE={cv_image.shape}. Only VGA and HDTV are supported')
             return

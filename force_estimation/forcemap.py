@@ -2,7 +2,7 @@
 
 import time
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from sklearn.neighbors import KernelDensity
