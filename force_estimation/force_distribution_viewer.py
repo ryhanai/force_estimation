@@ -3,12 +3,13 @@
 import colorsys
 import numpy as np
 from force_estimation import rviz_client
+from typing import List
 
 
 class ForceDistributionViewer:
     """
         Singleton pattern
-        Duplicated instantiation causes the error of ROS node intialization
+        Duplicated instantiation causes error in ROS node intialization
     """
 
     _unique_instance = None
@@ -43,7 +44,7 @@ class ForceDistributionViewer:
                           refresh=True,
                           draw_bin_objects=True):
         """
-            deprecated, use draw_bin_state() and show()
+            deprecated, use draw_bin_state()
         """
 
         if refresh:
@@ -105,17 +106,17 @@ class ForceDistributionViewer:
             print(f'[VIEWER] unknown scene: {scene}')
             return
 
-        self.rviz_client.draw_mesh(f"package://force_estimation/meshes/{mesh_file}",
-                                   mesh_pose,
-                                   rgba=self._rgba,
-                                   scale=scale)
+        self.rviz_client.draw_mesh_file(f"package://force_estimation/meshes/{mesh_file}",
+                                        mesh_pose,
+                                        rgba=self._rgba,
+                                        scale=scale)
 
     def draw_objects(self, bin_state):
         for object_state in bin_state:
             name, pose = object_state
             mesh_file, scale = self._object_info.rviz_mesh_file(name)
             assert mesh_file, f"mesh file for {name} not found"
-            self.rviz_client.draw_mesh(mesh_file, pose, self._rgba)
+            self.rviz_client.draw_mesh_file(mesh_file, pose, self._rgba)
 
     def draw_force_distribution(self, positions, fvals, draw_range=[0.5, 0.9]):
         fvals = fvals.flatten()
@@ -136,8 +137,19 @@ class ForceDistributionViewer:
 
         self.rviz_client.draw_points(points, rgbas)
 
-    def draw_vector_field(self, positions, values, scale=0.5):
-        self.rviz_client.draw_arrows(positions, positions+values*scale)
+    def draw_mesh(self,
+                  vertices: List[List[float]],
+                  faces: List[List[float]],
+                  colors: List[List[float]],
+                  frame_id="map"):
+        self.rviz_client.draw_mesh(vertices, faces, colors)
+
+    def draw_vector_field(self, positions, values, scale=0.5, frame_id="map"):
+        self.rviz_client.draw_arrows(positions,
+                                     positions + values * scale,
+                                     rgba=[1.0, 0.0, 0.0, 1.0],
+                                     scale=[0.01, 0.01, 0.0],
+                                     frame_id=frame_id)
 
     def draw_force_gradient(self, positions, fvals, scale=0.3, threshold=0.008):
         gxyz = np.gradient(- fvals)
@@ -153,6 +165,15 @@ class ForceDistributionViewer:
         self.rviz_client.draw_cube([0.045,-0.075,height], rgba, [0.09,0.15,0.03])
         self.rviz_client.draw_cube([-0.045,0.075,height], rgba, [0.09,0.15,0.03])
         self.rviz_client.draw_cube([-0.045,-0.075,height], rgba, [0.09,0.15,0.03])        
+
+    def set_static_transform(self, translation: list, rotation: list = [0., 0., 0., 1.], parent_frame='map', child_frame='base'):
+        self.rviz_client.set_static_transform(translation, rotation, parent_frame, child_frame)
+
+    def set_joint_positions(self, joint_names, positions):
+        self.rviz_client.set_joint_positions(joint_names, positions)
+
+    def load_urdf(self, urdf_path: str):
+        self.rviz_client.publish_robot_description(urdf_path)
 
     def clear(self):
         self.rviz_client.delete_all()
